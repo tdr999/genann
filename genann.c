@@ -201,6 +201,15 @@ void genann_randomize(genann *ann) {
     }
 }
 
+void genann_mutate_weight2(genann *ann)
+{
+    int i;
+    for (i = 0; i < ann->total_weights; i++)
+    {
+        double r = GENANN_RANDOM();
+        ann->weight[i] += r - 0.5;
+    }
+}
 
 void genann_mutate_weight(genann *ann) {
     int idx = rand() % ann->total_weights;
@@ -209,6 +218,8 @@ void genann_mutate_weight(genann *ann) {
         double r = GENANN_RANDOM();
         ann->weight[idx] += r - 0.5;
     }
+    // double r = GENANN_RANDOM();
+    // ann->weight[idx] += r - 0.5;
 }
 
 

@@ -76,6 +76,7 @@ genann *genann_init(int inputs, int hidden_layers, int hidden, int outputs);
 
 void genann_init_weights(genann *ann);
 
+void genann_mutate_weight2(genann *ann);
 void genann_mutate_weight(genann *ann);
 
 void delete_weight(genann *ann);

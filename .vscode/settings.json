@@ -1,0 +1,10 @@
+{
+    "makefile.makePath": "\"C:\\msys64\\usr\\bin\\make.exe\"",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\tudor_ytmdyrk\\Desktop\\genann\\genann",
+            "binaryPath": "c:\\Users\\tudor_ytmdyrk\\Desktop\\genann\\genann\\genetic",
+            "binaryArgs": []
+        }
+    ]
+}
