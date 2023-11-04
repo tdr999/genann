@@ -87,16 +87,60 @@ int main(int argc, char *argv[])
     genann *ann = genann_init(4, 1, 4, 3);
 
     int i, j;
-    int loops = 5000;
+    // int loops = 5000;
 
-    /* Train the network with backpropagation. */
-    printf("Training for %d loops over data.\n", loops);
-    for (i = 0; i < loops; ++i) {
-        for (j = 0; j < samples; ++j) {
-            genann_train(ann, input + j*4, class + j*3, .01);
+    // /* Train the network with backpropagation. */
+    // printf("Training for %d loops over data.\n", loops);
+    // for (i = 0; i < loops; ++i) {
+    //     for (j = 0; j < samples; ++j) {
+    //         genann_train(ann, input + j*4, class + j*3, .01);
+    //     }
+    //     /* printf("%1.2f ", xor_score(ann)); */
+    // }
+
+    double err;
+    double last_err = 1000;
+    int count = 0;
+    // int correct = 0;
+
+    do {
+        ++count;
+        if (count % 1000 == 0) {
+            /* We're stuck, start over. */
+            genann_randomize(ann);
+            last_err = 1000;
         }
-        /* printf("%1.2f ", xor_score(ann)); */
-    }
+
+        genann *save = genann_copy(ann);
+
+        /* Take a random guess at the ANN weights. */
+        for (i = 0; i < ann->total_weights; ++i) {
+            ann->weight[i] += ((double)rand())/RAND_MAX-0.5;
+        }
+
+        err = 0;
+        for (j = 0; j < samples; ++j)
+        {
+            /* See how we did. */
+            const double *guess = genann_run(ann, input + j * 4);
+            err += pow(guess[0] - class[j * 3 + 0], 2.0);
+            err += pow(guess[1] - class[j * 3 + 1], 2.0);
+            err += pow(guess[2] - class[j * 3 + 2], 2.0);
+        }
+        /* Keep these weights if they're an improvement. */
+        if (err < last_err) {
+            genann_free(save);
+            last_err = err;
+            printf("last err %f\n", last_err);
+        } else {
+            genann_free(ann);
+            ann = save;
+        }
+
+    } while (err > 40.01);
+
+    printf("Finished in %d loops.\n", count);
+
 
     int correct = 0;
     for (j = 0; j < samples; ++j) {
