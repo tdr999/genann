@@ -73,6 +73,11 @@ typedef struct genann {
 /* Creates and returns a new ann. */
 genann *genann_init(int inputs, int hidden_layers, int hidden, int outputs);
 
+
+void genann_init_weights(genann *ann);
+
+void genann_mutate_weight(genann *ann);
+
 /* Creates ANN from file saved with genann_write. */
 genann *genann_read(FILE *in);
 
