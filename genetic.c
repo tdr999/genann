@@ -15,6 +15,11 @@ double *input, *class;
 int samples;
 const char *class_names[] = {"Iris-setosa", "Iris-versicolor", "Iris-virginica"};
 
+#define ADD_WEIGHT_CHANCE 0.1
+#define DELETE_WEIGHT_CHANCE 0.1
+#define CHANGE_WEIGHT_CHANCE 0.8
+#define ADD_NEURON 0.2
+
 void load_data() {
     /* Load the iris data-set. */
     FILE *in = fopen("example/iris.data", "r");
@@ -74,13 +79,13 @@ typedef struct genome_t {
     float_t acc;
 } genome_t;
 
-#define POP_SIZE 100
+#define POP_SIZE 50
+
+
 
 //objective is to make this into kind of a genetic algorithm
 int main(int argc, char *argv[])
 {
-    printf("GENANN example 4.\n");
-    printf("Train an ANN on the IRIS dataset using backpropagation.\n");
 
     srand(time(0));
 
@@ -93,126 +98,173 @@ int main(int argc, char *argv[])
      */
     int i, j;
     // genann *ann = genann_init(4, 1, 4, 3);
-    genome_t population[POP_SIZE];
-    // init
-    for (i = 0; i < POP_SIZE; i++) {
-        population[i].acc = 0;
-        population[i].ann = genann_init(4, 1, 4, 3);
-        // genann_init_weights(population[i].ann);
-        // genann_init_weights(population[i].ann);
-        genann_randomize(population[i].ann);
-    }
 
 
     double err;
     // double last_err = 1000;
-    int generations = 10;
+    int generations = 30;
+    int giga_loop = 30;
+    int giga_counter = 0;
     int gen_counter = 0;
     // int correct = 0;
     genome_t *best_global_genome = (genome_t*)malloc(sizeof(genome_t));
     memset(best_global_genome, 0, sizeof(genome_t));
     // best_global_genome->acc = 1000;
 
-    do {
-
-
+    for (giga_counter = 0; giga_counter < giga_loop; giga_counter++)
+    {
+        genome_t *population = (genome_t*)malloc(sizeof(genome_t) * POP_SIZE);
+        // init
         for (i = 0; i < POP_SIZE; i++)
         {
-            genann *ann = population[i].ann;
+            population[i].acc = 0;
+            population[i].ann = genann_init(4, 1, 4, 3);
+            genann_init_weights(population[i].ann);
+            // genann_init_weights(population[i].ann);
+            // genann_randomize(population[i].ann);
+        }
+        do
+        {
 
-            err = 0;
-            // evaluate genome code
-            for (j = 0; j < samples; ++j)
+            for (i = 0; i < POP_SIZE; i++)
             {
-                /* See how we did. */
-                const double *guess = genann_run(ann, input + j * 4);
-                err += pow(guess[0] - class[j * 3 + 0], 2.0);
-                err += pow(guess[1] - class[j * 3 + 1], 2.0);
-                err += pow(guess[2] - class[j * 3 + 2], 2.0);
+                genann *ann = population[i].ann;
+
+                err = 0;
+                // evaluate genome code
+                for (j = 0; j < samples; ++j)
+                {
+                    /* See how we did. */
+                    const double *guess = genann_run(ann, input + j * 4);
+                    err += pow(guess[0] - class[j * 3 + 0], 2.0);
+                    err += pow(guess[1] - class[j * 3 + 1], 2.0);
+                    err += pow(guess[2] - class[j * 3 + 2], 2.0);
+                }
+                population[i].acc = err;
             }
-            population[i].acc = err;
-        }
 
-
-        // sort by acc, but for now, we just find min acc, as in, min error
-        float max_acc = 1000;
-        float_t avg_gen_acc = 0.0f;
-        genome_t *best_genome = (genome_t*)malloc(sizeof(genome_t));
-        memset(best_genome, 0, sizeof(genome_t));
-        for (i = 0; i < POP_SIZE; i++)
-        {
-            genome_t *g = &population[i];
-            if (g->acc < max_acc) {
-                max_acc = g->acc;
-                // best_genome = g;
-                memcpy(best_genome, g, sizeof(genome_t));
+            // sort by acc, but for now, we just find min acc, as in, min error
+            float max_acc = 1000;
+            float_t avg_gen_acc = 0.0f;
+            genome_t *best_genome = (genome_t *)malloc(sizeof(genome_t));
+            memset(best_genome, 0, sizeof(genome_t));
+            for (i = 0; i < POP_SIZE; i++)
+            {
+                genome_t *g = &population[i];
+                if (g->acc < max_acc)
+                {
+                    max_acc = g->acc;
+                    // best_genome = g;
+                    memcpy(best_genome, g, sizeof(genome_t));
+                }
+                avg_gen_acc += g->acc / POP_SIZE;
             }
-            avg_gen_acc += g->acc / POP_SIZE;
-        }
 
-        // // for the first gen, initialize the best global genome
-        if (gen_counter == 0) {memcpy(best_global_genome, best_genome, sizeof(genome_t));}
-
-        printf("best_glob %f best genom acc %f avg gen acc %f in gen %d\n", best_global_genome->acc, best_genome->acc, avg_gen_acc , gen_counter);
-
-        // create new pop, in this case, copy best genome
-        // if global genome is better than current, use global
-        for (i = 0; i < POP_SIZE; i++)
-        {
-            genome_t *g = &population[i];
-            if (best_genome->acc < best_global_genome->acc ) {
-                // memset(g, 0, sizeof(genome_t));
-                // best_global_genome = best_genome;
+            // // for the first gen, initialize the best global genome
+            if (gen_counter == 0)
+            {
                 memcpy(best_global_genome, best_genome, sizeof(genome_t));
-                memcpy(g, best_genome, sizeof(genome_t));
-            } else {
-                memcpy(g, best_global_genome, sizeof(genome_t));
             }
-        }
-        free(best_genome);
+            memset(population, 0, sizeof(genome_t) * POP_SIZE);
 
+            // printf("best_glob %f best genom acc %f avg gen acc %f in gen %d\n", best_global_genome->acc, best_genome->acc, avg_gen_acc , gen_counter);
 
-        // mutate, for now
-        for (i = 0; i < POP_SIZE; i++)
+            // create new pop, in this case, copy best genome
+            // if global genome is better than current, use global
+            for (i = 0; i < POP_SIZE; i++)
+            {
+                genome_t *g = &population[i];
+                if (best_genome->acc < best_global_genome->acc)
+                {
+                    // memset(g, 0, sizeof(genome_t));
+                    // best_global_genome = best_genome;
+                    memcpy(best_global_genome, best_genome, sizeof(genome_t));
+                    memcpy(g, best_genome, sizeof(genome_t));
+                }
+                else
+                {
+                    memcpy(g, best_global_genome, sizeof(genome_t));
+                }
+            }
+            free(best_genome);
+
+            // mutate, for now
+            for (i = 0; i < POP_SIZE; i++)
+            {
+                genann *g = population[i].ann;
+                // genann_randomize(g);
+
+                float_t mutation = GENANN_RANDOM();
+                if (mutation < ADD_WEIGHT_CHANCE)
+                {
+                    // with the mention that adding a neuron is equivalent to adding 2 weights
+                    // but we can leave it at here, because of how neat works
+                    add_weight(g);
+                    // printf("ADD WEIGHT\n");
+
+                    // so, if we add a neuron, we add an extra weight somewhere
+                    if (mutation < ADD_NEURON)
+                    {
+                        add_weight(g);
+                    }
+                }
+                if (mutation > ADD_WEIGHT_CHANCE && mutation < CHANGE_WEIGHT_CHANCE + ADD_WEIGHT_CHANCE)
+                {
+                    add_weight(g);
+                    genann_mutate_weight(g);
+                    genann_mutate_weight(g);
+                    genann_mutate_weight(g);
+                    // printf("MUTATE WEIGHT\n");
+                }
+                if (mutation > ADD_WEIGHT_CHANCE + CHANGE_WEIGHT_CHANCE && mutation < ADD_WEIGHT_CHANCE + CHANGE_WEIGHT_CHANCE + DELETE_WEIGHT_CHANCE)
+                {
+                    // printf("DELETE WEIGHT\n");
+                    delete_weight(g);
+                }
+            }
+
+            gen_counter++;
+        } while (gen_counter < generations);
+
+        // evaluate code
+
+        // get best genome
+        genann *ann = best_global_genome->ann;
+
+        int correct = 0;
+        for (j = 0; j < samples; ++j)
         {
-            genann *g = population[i].ann;
-            // genann_randomize(g);
-            genann_mutate_weight(g);
-            genann_mutate_weight(g);
-            genann_mutate_weight(g);
-            genann_mutate_weight(g);
-            genann_mutate_weight(g);
-            genann_mutate_weight(g);
+            const double *guess = genann_run(ann, input + j * 4);
+            if (class[j * 3 + 0] == 1.0)
+            {
+                if (guess[0] > guess[1] && guess[0] > guess[2])
+                    ++correct;
+            }
+            else if (class[j * 3 + 1] == 1.0)
+            {
+                if (guess[1] > guess[0] && guess[1] > guess[2])
+                    ++correct;
+            }
+            else if (class[j * 3 + 2] == 1.0)
+            {
+                if (guess[2] > guess[0] && guess[2] > guess[1])
+                    ++correct;
+            }
+            else
+            {
+                printf("Logic error.\n");
+                exit(1);
+            }
+            // printf(" random guess was %f %f %f\n", guess[0], guess[1], guess[2]);
         }
 
-
-        gen_counter++;
-    } while (gen_counter < generations);
-
-
-
-    // evaluate code
-
-    // get best genome
-    genann *ann = best_global_genome->ann;
-
-    int correct = 0;
-    for (j = 0; j < samples; ++j) {
-        const double *guess = genann_run(ann, input + j*4);
-        if (class[j*3+0] == 1.0) {if (guess[0] > guess[1] && guess[0] > guess[2]) ++correct;}
-        else if (class[j*3+1] == 1.0) {if (guess[1] > guess[0] && guess[1] > guess[2]) ++correct;}
-        else if (class[j*3+2] == 1.0) {if (guess[2] > guess[0] && guess[2] > guess[1]) ++correct;}
-        else {printf("Logic error.\n"); exit(1);}
-        printf(" random guess was %f %f %f\n", guess[0], guess[1], guess[2]);
+        printf("%d/%d correct (%0.1f%%).\n", correct, samples, (double)correct / samples * 100.0);
+        printf(" Best genome error %f\n", best_global_genome->acc);
+        free(best_global_genome);
+        free(population);
     }
 
-    printf("%d/%d correct (%0.1f%%).\n", correct, samples, (double)correct / samples * 100.0);
-    printf(" Best genome error %f\n", best_global_genome->acc);
-    free(best_global_genome);
-
-
-
-    genann_free(ann);
+    // genann_free(ann);
     free(input);
     free(class);
 

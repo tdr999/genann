@@ -78,6 +78,8 @@ void genann_init_weights(genann *ann);
 
 void genann_mutate_weight(genann *ann);
 
+void delete_weight(genann *ann);
+void add_weight(genann *ann);
 /* Creates ANN from file saved with genann_write. */
 genann *genann_read(FILE *in);
 
